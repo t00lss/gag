@@ -1,0 +1,16 @@
+{
+  "botName": "GAG",
+  "prefix": ",",
+  "owners": [],
+  "settings": {
+    "antiSpam": true,
+    "antiRaid": true,
+    "antiNuke": true,
+    "logs": true
+  },
+  "colors": {
+    "main": "Purple",
+    "error": "Red",
+    "success": "Green"
+  }
+}
