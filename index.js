@@ -7,6 +7,7 @@ const {
 
 const fs = require("fs");
 
+
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -17,24 +18,80 @@ const client = new Client({
 });
 
 
-// Load event files
-const eventsFolder = "./events";
+// Load commands
+client.commands = new Map();
 
-fs.readdirSync(eventsFolder).forEach((file) => {
-    const event = require(`${eventsFolder}/${file}`);
-    const eventName = file.split(".")[0];
+const commandFiles = fs.readdirSync("./commands");
 
-    if (eventName === "ready") {
-        client.once("ready", () => {
-            event(client);
-        });
-    }
+for (const file of commandFiles) {
 
-    if (eventName === "messageCreate") {
-        client.on("messageCreate", (message) => {
-            event(client, message);
-        });
-    }
+    const command = require(`./commands/${file}`);
+
+    client.commands.set(
+        command.name,
+        command
+    );
+
+    console.log(
+        `Loaded command: ${command.name}`
+    );
+}
+
+
+// Ready event
+client.once("ready", () => {
+
+    console.log(
+        `✅ ${client.user.tag} online`
+    );
+
+});
+
+
+// Welcome + Autorole
+client.on("guildMemberAdd", async (member) => {
+
+    const welcome = require("./features/welcome");
+    const autorole = require("./features/autorole");
+
+
+    await welcome.execute(member);
+
+    await autorole.execute(member);
+
+});
+
+
+// Messages
+client.on("messageCreate", async (message) => {
+
+    if (message.author.bot) return;
+
+
+    if (!message.content.startsWith(",")) return;
+
+
+    const args = message.content
+        .slice(1)
+        .trim()
+        .split(/ +);
+
+
+    const commandName = args.shift().toLowerCase();
+
+
+    const command = client.commands.get(commandName);
+
+
+    if (!command) return;
+
+
+    command.execute(
+        message,
+        args,
+        client
+    );
+
 });
 
 
