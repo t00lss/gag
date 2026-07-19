@@ -2,10 +2,10 @@ require("dotenv").config();
 
 const {
     Client,
-    GatewayIntentBits,
-    Collection,
-    EmbedBuilder
+    GatewayIntentBits
 } = require("discord.js");
+
+const fs = require("fs");
 
 const client = new Client({
     intents: [
@@ -16,129 +16,25 @@ const client = new Client({
     ]
 });
 
-const PREFIX = ",";
 
-client.commands = new Collection();
+// Load event files
+const eventsFolder = "./events";
 
-client.once("ready", () => {
-    console.log(`✅ GAG is online as ${client.user.tag}`);
+fs.readdirSync(eventsFolder).forEach((file) => {
+    const event = require(`${eventsFolder}/${file}`);
+    const eventName = file.split(".")[0];
 
-    client.user.setPresence({
-        activities: [
-            {
-                name: "GAG Protection",
-                type: 3
-            }
-        ],
-        status: "online"
-    });
-});
-
-
-client.on("messageCreate", async (message) => {
-    if (message.author.bot) return;
-
-    if (!message.content.startsWith(PREFIX)) return;
-
-    const args = message.content
-        .slice(PREFIX.length)
-        .trim()
-        .split(/ +/);
-
-    const command = args.shift().toLowerCase();
-
-
-    if (command === "help") {
-
-        const embed = new EmbedBuilder()
-            .setTitle("👻 GAG Help")
-            .setDescription(`
-**Moderation**
-\`,ban @user\`
-\`,kick @user\`
-\`,clear amount\`
-\`,timeout @user time\`
-
-**Security**
-🛡️ Anti Spam
-🛡️ Anti Raid
-🛡️ Anti Nuke
-
-**Utility**
-\`,ping\`
-\`,help\`
-            `)
-            .setColor("Purple");
-
-        return message.reply({
-            embeds: [embed]
+    if (eventName === "ready") {
+        client.once("ready", () => {
+            event(client);
         });
     }
 
-
-    if (command === "ping") {
-        return message.reply(
-            `🏓 Pong! ${client.ws.ping}ms`
-        );
+    if (eventName === "messageCreate") {
+        client.on("messageCreate", (message) => {
+            event(client, message);
+        });
     }
-
-
-    if (command === "clear") {
-
-        if (!message.member.permissions.has("ManageMessages"))
-            return;
-
-        const amount = Number(args[0]);
-
-        if (!amount)
-            return message.reply("Give an amount.");
-
-        await message.channel.bulkDelete(
-            amount,
-            true
-        );
-
-        message.channel.send(
-            `🧹 Deleted ${amount} messages`
-        );
-    }
-
-
-    if (command === "kick") {
-
-        if (!message.member.permissions.has("KickMembers"))
-            return;
-
-        const user = message.mentions.members.first();
-
-        if (!user)
-            return message.reply("Mention a user.");
-
-        await user.kick();
-
-        message.channel.send(
-            `👢 Kicked ${user.user.tag}`
-        );
-    }
-
-
-    if (command === "ban") {
-
-        if (!message.member.permissions.has("BanMembers"))
-            return;
-
-        const user = message.mentions.members.first();
-
-        if (!user)
-            return message.reply("Mention a user.");
-
-        await user.ban();
-
-        message.channel.send(
-            `🔨 Banned ${user.user.tag}`
-        );
-    }
-
 });
 
 
