@@ -21,7 +21,9 @@ const client = new Client({
 // Load commands
 client.commands = new Map();
 
-const commandFiles = fs.readdirSync("./commands");
+const commandFiles = fs.readdirSync("./commands")
+    .filter(file => file.endsWith(".js"));
+
 
 for (const file of commandFiles) {
 
@@ -38,12 +40,22 @@ for (const file of commandFiles) {
 }
 
 
-// Ready event
+// Bot ready
 client.once("ready", () => {
 
     console.log(
         `✅ ${client.user.tag} online`
     );
+
+    client.user.setPresence({
+        activities: [
+            {
+                name: "GAG Protection",
+                type: 3
+            }
+        ],
+        status: "online"
+    });
 
 });
 
@@ -62,7 +74,7 @@ client.on("guildMemberAdd", async (member) => {
 });
 
 
-// Messages
+// Messages + Commands
 client.on("messageCreate", async (message) => {
 
     if (message.author.bot) return;
@@ -74,7 +86,7 @@ client.on("messageCreate", async (message) => {
     const args = message.content
         .slice(1)
         .trim()
-        .split(/ +);
+        .split(/ +/);
 
 
     const commandName = args.shift().toLowerCase();
@@ -86,11 +98,23 @@ client.on("messageCreate", async (message) => {
     if (!command) return;
 
 
-    command.execute(
-        message,
-        args,
-        client
-    );
+    try {
+
+        await command.execute(
+            message,
+            args,
+            client
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        message.reply(
+            "❌ Something went wrong running that command."
+        );
+
+    }
 
 });
 
